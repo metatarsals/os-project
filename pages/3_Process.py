@@ -1,5 +1,5 @@
 import pandas as pd
-from Streamlitapp.project.process_module import Process_Analytics_Module
+from process_module import Process_Analytics_Module
 from collections import deque
 import threading
 import time
