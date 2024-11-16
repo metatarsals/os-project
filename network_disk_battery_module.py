@@ -1,3 +1,4 @@
+from time import sleep
 import psutil
 import pandas as pd
 from datetime import datetime
@@ -78,72 +79,81 @@ class NetworkMonitor:
 # Class for Disk Monitoring
 class DiskMonitor:
     def __init__(self):
-        self.attrs_disk_usage = [
-            "Partition", 
-            "Mountpoint", 
-            "File System Type", 
-            "Total Space (GB)", 
-            "Used Space (GB)", 
-            "Free Space (GB)", 
-            "Percentage Used (%)"
-        ]
-        self.attrs_disk_io = [
-            "Disk", 
-            "Read Count", 
-            "Write Count", 
-            "Bytes Read", 
-            "Bytes Written", 
-            "Read Time (ms)", 
-            "Write Time (ms)"
-        ]
-
-    @staticmethod
-    def get_disk_info() -> Generator[pd.DataFrame, None, None]:
-        disk_info = {
-            "Disk Usage": [],
-            "Disk I/O": []
-        }
-
-        # Collect disk usage information and convert to DataFrame
-        partitions = psutil.disk_partitions()
-        disk_usage_data = []
-        for partition in partitions:
-            try:
-                usage = psutil.disk_usage(partition.mountpoint)
-                disk_usage_data.append({
-                    "Partition": partition.device,
-                    "Mountpoint": partition.mountpoint,
-                    "File System Type": partition.fstype,
-                    "Total Space (GB)": usage.total / (1024 ** 3),
-                    "Used Space (GB)": usage.used / (1024 ** 3),
-                    "Free Space (GB)": usage.free / (1024 ** 3),
-                    "Percentage Used (%)": usage.percent
-                })
-            except PermissionError:
-                continue
-
-        df_disk_usage = pd.DataFrame(disk_usage_data)
-        df_disk_usage = df_disk_usage.reindex(columns=["Partition", "Mountpoint", "File System Type", "Total Space (GB)", "Used Space (GB)", "Free Space (GB)", "Percentage Used (%)"])
-        yield df_disk_usage
-
-        # Collect disk I/O information and convert to DataFrame
-        io_counters = psutil.disk_io_counters(perdisk=True)
-        disk_io_data = []
-        for disk, io in io_counters.items():
-            disk_io_data.append({
-                "Disk": disk,
-                "Read Count": io.read_count,
-                "Write Count": io.write_count,
-                "Bytes Read": io.read_bytes,
-                "Bytes Written": io.write_bytes,
-                "Read Time (ms)": io.read_time,
-                "Write Time (ms)": io.write_time
-            })
-
-        df_disk_io = pd.DataFrame(disk_io_data)
-        df_disk_io = df_disk_io.reindex(columns=["Disk", "Read Count", "Write Count", "Bytes Read", "Bytes Written", "Read Time (ms)", "Write Time (ms)"])
-        yield df_disk_io
-
+        self.attrs = ['device', 'mountpoint', 'fstype', 'opts']
+        self.res = {attr: [] for attr in self.attrs}  
+        self.attrs1 = ['read_count','write_count','read_bytes','write_bytes']
+        self.res1 = []
+    
+    def get_disk_info(self):
+        """
+        Collect disk partition information in a column-based format.
+        Each attribute (device, mountpoint, etc.) is a key with a list of values.
+        """
+        try:
+            # Reset data structure for new readings
+            new_data = {attr: [] for attr in self.attrs}
+            
+            partitions = psutil.disk_partitions()
+            for partition in partitions:
+                # For each partition, append its values to the corresponding attribute lists
+                for attr in self.attrs:
+                    try:
+                        value = getattr(partition, attr)
+                        new_data[attr].append(value)
+                    except AttributeError:
+                        new_data[attr].append(None)
+                        
+            self.res = new_data
+            return new_data
+                
+        except Exception as e:
+            print(f"Error collecting disk info: {e}")
+            return self.res
+        
+    def get_disk_analytics(self):
+        """Collect current memory information"""
+        datadisk = []
+        
+        try:
+            disk_stats = psutil.disk_io_counters()
+            disk_info = {}
+            
+            # Get all available memory attributes
+            for attr in self.attrs1:
+                try:
+                    value = getattr(disk_stats, attr)
+                    if attr in ('read_bytes', 'write_bytes'):
+                        value = round(value / (1024 ** 2), 2)
+                    disk_info[attr] = value  # Round to 2 decimal places
+                except AttributeError:
+                    disk_info[attr] = None
+            
+            datadisk.append(disk_info)
+            
+        except Exception as e:
+            
+            print(f"Error collecting read write info: {e}")
+            
+        self.res1 = datadisk
+        return datadisk
+    
+    def disk_generator(self, interval: float = 1.0) -> Generator[pd.DataFrame, None, None]:
+        """
+        Generate DataFrames of disk information at specified intervals.
+        Each row represents a partition, columns are the attributes.
+        """
+        while True:
+            self.get_disk_info()
+            df = pd.DataFrame(self.res)
+            df = df.reindex(columns=self.attrs)
+            
+            self.get_disk_analytics()
+            df1 = pd.DataFrame(self.res1)
+            df1 = df1.reindex(columns=self.attrs1)
+            
+            # Yield the DataFrame
+            yield (df,df1)
+            sleep(interval)
 
 # Class for Battery Monitoring
 class BatteryMonitor:

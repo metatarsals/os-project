@@ -9,36 +9,8 @@ class CPUMonitor:
         # Initialize core counts for later use
         self.physical_cores = psutil.cpu_count(logical=False)
         self.logical_cores = psutil.cpu_count(logical=True)
-        
-        # Define the attributes for the CPU metrics
-        self.attrs_cpu_times = [
-            'User Time', 'System Time', 'Idle Time', 'IO Wait', 'IRQ', 
-            'SoftIRQ', 'Steal', 'Guest', 'Guest Nice'
-        ]
-        
-        self.attrs_cpu_times_per_core = [
-            'Core_1_User_Time', 'Core_1_System_Time', 'Core_1_Idle_Time', 'Core_1_IO_Wait', 
-            'Core_1_IRQ', 'Core_1_SoftIRQ', 'Core_1_Steal', 'Core_1_Guest', 'Core_1_Guest_Nice',
-            # Similar for all cores
-        ]
-        
-        self.attrs_cpu_percent = [
-            'Overall_CPU_Usage', 'ts', 'Core_1_Usage', 'Core_2_Usage', 'Core_3_Usage', 'Core_4_Usage',
-            # Add for all available cores
-        ]
-        
-        self.attrs_cpu_freq = [
-            'CPU_Current_Freq', 'CPU_Min_Freq', 'CPU_Max_Freq', 
-            'Core_1_Current_Freq', 'Core_1_Min_Freq', 'Core_1_Max_Freq', 
-            # Add for all available cores
-        ]
-        
-        self.attrs_cpu_stats = [
-            'Context_Switches', 'Interrupts', 'Soft_Interrupts', 'Syscalls'
-        ]
-        
         self.res = []
-
+    
     def get_num_cores(self) -> int:
         return psutil.cpu_count(logical=True)
     
@@ -56,6 +28,8 @@ class CPUMonitor:
             'Guest': getattr(cpu_stats, 'guest', None),
             'Guest Nice': getattr(cpu_stats, 'guest_nice', None)
         }
+        # self.res += [dict_]
+        # return pd.DataFrame(self.res)
     
     def get_cpu_times_per_core(self) -> Dict[str, float]:
         """Get CPU times for each core"""
@@ -81,7 +55,7 @@ class CPUMonitor:
         overall_usage = psutil.cpu_percent(percpu=False)
         per_core_usage = psutil.cpu_percent(percpu=True)
         
-        data = {'Overall_CPU_Usage': overall_usage, 'ts' : time.time()}
+        data = {'Overall_CPU_Usage': overall_usage, 'ts' :  time.time()}
         for i, usage in enumerate(per_core_usage):
             data[f'Core_{i+1}_Usage'] = usage
         return data
@@ -129,7 +103,9 @@ class CPUMonitor:
         while True:
             # Collect all metrics
             data = {}
-            data.update({'index': pd.Timestamp.now()})
+            data.update({
+                'index' : pd.Timestamp.now()
+            })
             data.update(self.get_cpu_times())
             data.update(self.get_cpu_times_per_core())
             data.update(self.get_cpu_percent())
@@ -139,7 +115,6 @@ class CPUMonitor:
             # Add timestamp
             self.res += [data]
             df = pd.DataFrame(self.res)
-            df = df.reindex(columns=self.attrs_cpu_times + self.attrs_cpu_times_per_core + self.attrs_cpu_percent + self.attrs_cpu_freq + self.attrs_cpu_stats)
             yield df
             
             sleep(interval)

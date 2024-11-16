@@ -11,12 +11,6 @@ from typing import Generator, Dict, Any
 refresh_rate = 1  # seconds
 csv_max_size = 100000000  # Bytes
 
-import psutil
-import pandas as pd
-from typing import Generator
-from time import sleep
-
-
 class Process_Analytics_Module:
     def __init__(self):
         self.res = []
@@ -55,16 +49,10 @@ class Process_Analytics_Module:
         while True:
             self.get_process_info()
             df = pd.DataFrame(self.res)
-
-            # Reindex to ensure all attributes are included, even if some attributes are missing
             df = df.reindex(columns=self.attrs)
 
-            # Yield the DataFrame for further processing
             yield df
-
-            # Wait for the specified interval before fetching data again
             sleep(interval)
-
 
 class Process_Interactive_Module:
     """Creates, assigns work to, and kills processes.
@@ -289,7 +277,6 @@ class Backups_Module:
             # Clean up: remove the script after execution
             if os.path.exists(script_path):
                 os.remove(script_path)
-
 
 if __name__ == '__main__':
     process_module = Process_Analytics_Module()
