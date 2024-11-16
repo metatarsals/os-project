@@ -1,30 +1,29 @@
 import subprocess
 import psutil
-import csv
-from time import sleep
+import pandas as pd
 import os
 import shutil
-import pandas as pd
+from time import sleep
 
 refresh_rate = 1  # seconds
 
 class App_Analytics_Module:
     def __init__(self):
-        # self._sort = sort_by
-        # self.d = dir
         pass
 
     def generator(self):
-        installed_apps = self.get_installed_apps()
-
         while True:
+            installed_apps = self.get_installed_apps()
             self.get_running_apps_info(installed_apps)
-            yield(pd.DataFrame.from_dict(installed_apps))
-            # sleep(refresh_rate)
+            
+            # Yielding Pandas DataFrame of the installed apps with usage stats
+            df = pd.DataFrame(installed_apps)
+            yield df
+            
+            sleep(refresh_rate)
 
     def get_installed_apps(self):
         """Retrieve installed applications on a Linux system."""
-
         try:
             # dpkg works only for Debian/Ubuntu systems
             command = "dpkg-query -W --showformat='${Package},${Version},${Architecture},${Installed-Size}\n'"
@@ -55,7 +54,6 @@ class App_Analytics_Module:
         total_memory = psutil.virtual_memory().total  # Get total system memory
 
         for app in installed_apps:
-
             # Search for the app in the running processes
             for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
                 try:
@@ -75,10 +73,8 @@ class App_Interaction_Module:
     def __init__(self, app, command = 'none'):
         if command == 'none':
             pass
-        
         elif command == 'uninstall':
             self.uninstall(app)
-
         elif command == 'delete_cached_info':
             # Implement delete cache function
             self.delete_cached_info(app)
@@ -131,6 +127,14 @@ class App_Interaction_Module:
     
 
 if __name__ == '__main__':
-    App_Analytics_Module('cpu_usage','desc')
-    # App_Interactive_Module('google_chrome', 'delete_cached_info')
-
+    app_analytics = App_Analytics_Module()
+    app_generator = app_analytics.generator()
+    
+    try:
+        # Example: Collecting 5 iterations of app usage info
+        for _ in range(5):
+            df = next(app_generator)
+            print("\nApp Analytics DataFrame:")
+            print(df.head())
+    except KeyboardInterrupt:
+        print("\nMonitoring stopped by user")

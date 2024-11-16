@@ -11,11 +11,17 @@ from typing import Generator, Dict, Any
 refresh_rate = 1  # seconds
 csv_max_size = 100000000  # Bytes
 
+import psutil
+import pandas as pd
+from typing import Generator
+from time import sleep
+
+
 class Process_Analytics_Module:
     def __init__(self):
         self.res = []
         self.attrs = [
-            'pid', 'name', 'exe','status', 'memory_percent', 'cpu_num', 'cpu_percent',
+            'pid', 'name', 'exe', 'status', 'memory_percent', 'cpu_num', 'cpu_percent',
             'num_ctx_switches', 'num_fds', 'threads', 
             'num_threads', 'io_counters'
         ]
@@ -26,7 +32,7 @@ class Process_Analytics_Module:
         
         for proc in psutil.process_iter(attrs=self.attrs):
             try:
-                # Get process info as dictionary
+                # Get process info as a dictionary
                 proc_info = proc.info
                 data.append(proc_info)
 
@@ -49,9 +55,14 @@ class Process_Analytics_Module:
         while True:
             self.get_process_info()
             df = pd.DataFrame(self.res)
+
+            # Reindex to ensure all attributes are included, even if some attributes are missing
             df = df.reindex(columns=self.attrs)
 
+            # Yield the DataFrame for further processing
             yield df
+
+            # Wait for the specified interval before fetching data again
             sleep(interval)
 
 
@@ -281,7 +292,16 @@ class Backups_Module:
 
 
 if __name__ == '__main__':
-    Process_Analytics_Module()
+    process_module = Process_Analytics_Module()
+
+    # Start the generator
+    process_generator = process_module.generator(interval=2.0)
+
+    # Iterate through the generator to collect process data
+    for process_df in process_generator:
+        # Print the DataFrame to the terminal
+        print(process_df)
+        print("\n" + "-"*50 + "\n")  # Add a separator for readability
 
     task_string = """#!/usr/bin/env python3
 import time
