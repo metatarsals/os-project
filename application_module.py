@@ -7,17 +7,32 @@ from time import sleep
 
 refresh_rate = 1  # seconds
 
+import psutil
+import pandas as pd
+import subprocess
+from time import sleep
+
 class App_Analytics_Module:
     def __init__(self):
-        pass
+        # Defining the attributes for installed apps
+        self.attrs_installed_apps = [
+            'name',
+            'version',
+            'architecture',
+            'installed_size(B)',
+            'cpu_usage(%)',
+            'memory_usage(B)',
+            'memory_percentage(%)'
+        ]
 
-    def generator(self):
+    def generator(self, refresh_rate=5):
         while True:
             installed_apps = self.get_installed_apps()
             self.get_running_apps_info(installed_apps)
             
             # Yielding Pandas DataFrame of the installed apps with usage stats
             df = pd.DataFrame(installed_apps)
+            df = df.reindex(columns=self.attrs_installed_apps)  # Reindex to match attributes
             yield df
             
             sleep(refresh_rate)

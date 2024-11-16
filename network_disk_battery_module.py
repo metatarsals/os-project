@@ -6,6 +6,24 @@ from typing import Generator
 
 # Class for Network Monitoring
 class NetworkMonitor:
+    def __init__(self):
+        self.attrs_network_io = [
+            "Bytes Sent", 
+            "Bytes Received", 
+            "Packets Sent", 
+            "Packets Received"
+        ]
+        self.attrs_interfaces = [
+            "Interface", 
+            "Status", 
+            "Speed (Mbps)", 
+            "MTU", 
+            "Family", 
+            "Address", 
+            "Broadcast", 
+            "Netmask"
+        ]
+
     @staticmethod
     def get_network_info() -> Generator[pd.DataFrame, None, None]:
         network_info = {
@@ -29,6 +47,7 @@ class NetworkMonitor:
             "Packets Received": [network_info["Network I/O"]["Packets Received"]],
         }
         df_io = pd.DataFrame(io_data)
+        df_io = df_io.reindex(columns=df_io.columns)  # Reindex to match attributes
         yield df_io
 
         # Collect interface information and convert to DataFrame
@@ -52,11 +71,32 @@ class NetworkMonitor:
                     interfaces_data.append(address_info)
 
         df_interfaces = pd.DataFrame(interfaces_data)
+        df_interfaces = df_interfaces.reindex(columns=["Interface", "Status", "Speed (Mbps)", "MTU", "Family", "Address", "Broadcast", "Netmask"])
         yield df_interfaces
 
 
 # Class for Disk Monitoring
 class DiskMonitor:
+    def __init__(self):
+        self.attrs_disk_usage = [
+            "Partition", 
+            "Mountpoint", 
+            "File System Type", 
+            "Total Space (GB)", 
+            "Used Space (GB)", 
+            "Free Space (GB)", 
+            "Percentage Used (%)"
+        ]
+        self.attrs_disk_io = [
+            "Disk", 
+            "Read Count", 
+            "Write Count", 
+            "Bytes Read", 
+            "Bytes Written", 
+            "Read Time (ms)", 
+            "Write Time (ms)"
+        ]
+
     @staticmethod
     def get_disk_info() -> Generator[pd.DataFrame, None, None]:
         disk_info = {
@@ -83,6 +123,7 @@ class DiskMonitor:
                 continue
 
         df_disk_usage = pd.DataFrame(disk_usage_data)
+        df_disk_usage = df_disk_usage.reindex(columns=["Partition", "Mountpoint", "File System Type", "Total Space (GB)", "Used Space (GB)", "Free Space (GB)", "Percentage Used (%)"])
         yield df_disk_usage
 
         # Collect disk I/O information and convert to DataFrame
@@ -100,11 +141,19 @@ class DiskMonitor:
             })
 
         df_disk_io = pd.DataFrame(disk_io_data)
+        df_disk_io = df_disk_io.reindex(columns=["Disk", "Read Count", "Write Count", "Bytes Read", "Bytes Written", "Read Time (ms)", "Write Time (ms)"])
         yield df_disk_io
 
 
 # Class for Battery Monitoring
 class BatteryMonitor:
+    def __init__(self):
+        self.attrs_battery = [
+            "Percentage", 
+            "Plugged In", 
+            "Time Left (minutes)"
+        ]
+
     @staticmethod
     def get_battery_info() -> Generator[pd.DataFrame, None, None]:
         battery = psutil.sensors_battery()
@@ -115,27 +164,31 @@ class BatteryMonitor:
         }
 
         df_battery = pd.DataFrame([battery_info])
+        df_battery = df_battery.reindex(columns=["Percentage", "Plugged In", "Time Left (minutes)"])
         yield df_battery
 
 
 # Main process to gather and yield data
 def main():
     # Yielding network data
-    network_info_generator = NetworkMonitor.get_network_info()
+    network_monitor = NetworkMonitor()
+    network_info_generator = network_monitor.get_network_info()
     for df in network_info_generator:
         print("Network Info DataFrame:")
         print(df)
         print("\n")
 
     # Yielding disk data
-    disk_info_generator = DiskMonitor.get_disk_info()
+    disk_monitor = DiskMonitor()
+    disk_info_generator = disk_monitor.get_disk_info()
     for df in disk_info_generator:
         print("Disk Info DataFrame:")
         print(df)
         print("\n")
 
     # Yielding battery data
-    battery_info_generator = BatteryMonitor.get_battery_info()
+    battery_monitor = BatteryMonitor()
+    battery_info_generator = battery_monitor.get_battery_info()
     for df in battery_info_generator:
         print("Battery Info DataFrame:")
         print(df)
