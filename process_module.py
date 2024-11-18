@@ -1,3 +1,4 @@
+from datetime import datetime
 import psutil
 import subprocess
 from time import sleep
@@ -260,6 +261,11 @@ class Backups_Module:
     def run_backup(self):
         """Run the backup Bash script using psutil."""
         script_path = self.__create_backup_script()
+
+        entry = {
+            'from': self.src,  # The source directory
+            'to': self.dst,    # The backup directory
+        }
         
         try:
             # Run the backup script as a subprocess
@@ -272,11 +278,26 @@ class Backups_Module:
         
         except Exception as e:
             print(f"Error running the backup script: {e}")
+            entry['status'] = 'failed'  # Add a failure status to the entry
+            entry['when'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")  # Timestamp when failure occurs
+            return entry
 
         finally:
             # Clean up: remove the script after execution
             if os.path.exists(script_path):
                 os.remove(script_path)
+
+        # entry = {
+        # 'from': self.src,  # Assuming self.source_dir is set during object initialization
+        # 'to': self.dst,    # Assuming self.backup_dir is set during object initialization
+        # 'when': datetime.now().strftime("%d-%m-%Y %H:%M:%S"),  # Get current timestamp
+        # 'status': 'successful' if k else 'failed'
+        # }
+            entry['when'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")  # Timestamp when the backup finishes
+            entry['status'] = 'successful'  # Mark as successful once backup completes
+        
+        # Return the new log entry
+        return entry
 
 if __name__ == '__main__':
     process_module = Process_Analytics_Module()
@@ -321,7 +342,7 @@ if __name__ == "__main__":
 
 void perform_work() {
     for (int i = 0; i < 10; i++) {
-        printf("Worling... %d\n", i + 1);
+        printf("Working... %d\n", i + 1);
         sleep(1);  // Sleep for 1 second
     }
 }

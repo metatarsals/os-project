@@ -11,8 +11,11 @@ class CPUMonitor:
         self.logical_cores = psutil.cpu_count(logical=True)
         self.res = []
     
-    def get_num_cores(self) -> int:
-        return psutil.cpu_count(logical=True)
+    def get_num_cores(self) -> Dict[str,int]:
+        return {
+        'Physical Cores': psutil.cpu_count(logical=False),
+        'Logical Cores': psutil.cpu_count(logical=True)
+    }
     
     def get_cpu_times(self) -> Dict[str, float]:
         """Get system-wide CPU times"""
@@ -101,11 +104,12 @@ class CPUMonitor:
             pd.DataFrame: DataFrame containing all CPU metrics
         """
         while True:
-            # Collect all metrics
             data = {}
+            # Collect all metrics
             data.update({
                 'index' : pd.Timestamp.now()
             })
+            data.update(self.get_num_cores())
             data.update(self.get_cpu_times())
             data.update(self.get_cpu_times_per_core())
             data.update(self.get_cpu_percent())

@@ -7,11 +7,6 @@ from time import sleep
 
 refresh_rate = 1  # seconds
 
-import psutil
-import pandas as pd
-import subprocess
-from time import sleep
-
 class App_Analytics_Module:
     def __init__(self):
         # self._sort = sort_by
