@@ -21,8 +21,18 @@ package_mem_data_manager = Memory_Module().generator
 st.write("# Welcome back")
 time_placeholder = st.empty()
 col1,col2=st.columns([6,3])
-col1.markdown("text")
-col2.markdown("smth about battery health")
+col1.markdown("""
+*Track your device's performance here with real-time updates and detailed 
+insights. Monitor everything from system usage to battery health to keep
+your device running smoothly.*
+              """)
+col2.markdown("""
+*Battery health is basically how well your battery can hold a
+charge over time. As it gets older or goes through a lot of charging 
+cycles, it starts to wear out, which can affect how long your device 
+lasts. To help maintain it, avoid overcharging and try to keep the 
+battery between 20% & 80%.* 
+""")
 c1 = col1.empty()
 c2 = col2.empty()
 k=0

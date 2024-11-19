@@ -16,9 +16,15 @@ package_data_manager = DiskMonitor().disk_generator
 st.write("# Disk Monitor")
 time_placeholder = st.empty()
 col1,col2=st.columns([3,1])
-col1.markdown("small descriptor for disks and monitoring them")
+col1.markdown("""
+Your device's disks, whether HDDs (slower, more affordable) or SSDs 
+(faster, more durable), store all your important data. Keeping an eye on
+their health helps avoid problems like slowdowns or crashes. A little 
+maintenance goes a long way in making sure they last longer and run 
+smoothly. 
+""")
 c1 = col1.empty()
-col2.markdown("## important text shit here ig")
+col2.markdown("## your computer needs care too.")
 
 while True:
     with time_placeholder:
